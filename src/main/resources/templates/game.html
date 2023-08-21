@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cricket Trumps X</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed&family=Roboto:wght@300&display=swap"
+          rel="stylesheet"
+          type="text/css"/>
+    <!--suppress JSUnresolvedLibraryURL -->
+    <link href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@6.6.6/css/flag-icons.min.css"
+          rel="stylesheet"
+          type="text/css"/>
+    <link href="/css/game.css" rel="stylesheet" type="text/css"/>
+    <link href="/css/game-logo-colors.css" rel="stylesheet" type="text/css"/>
+    <link href="/css/game-name-colors.css" rel="stylesheet" type="text/css"/>
+    <link href="/svg/favicon.svg" rel="icon" type="image/svg+xml"/>
+</head>
+<body>
+<div class="board">
+    <div class="scoreboard">
+        <div class="score-ticker">
+            <span data-th-text="${gameDeck.getUserDeck.size + 1}"></span>
+        </div>
+        <div class="score-ticker">
+            <span data-th-text="${gameDeck.getAiDeck.size + 1}"></span>
+        </div>
+    </div>
+    <div class="table">
+        <div class="card" id="user-card">
+            <div class="shine"></div>
+            <div class="pic-container" id="user-card-logo-bg">
+                <div class="logo" id="user-card-logo"></div>
+                <div></div>
+                <div></div>
+                <div class="profile-pic">
+                    <img alt=""
+                         data-th-alt="${currentUserPlayer.getName}"
+                         data-th-src="${currentUserPlayer.getImageUrl}"
+                         id="player-image"
+                         src="">
+                </div>
+            </div>
+            <div class="name-country" id="user-card-name">
+                <div>
+                    <strong><span data-th-text="${currentUserPlayer.getName}"></span></strong>
+                </div>
+                <div>
+                    <span class="fi" id="user-card-flag"></span>
+                    <em> <span data-th-text="${currentUserPlayer.getCountry}"></span></em>
+                </div>
+            </div>
+            <div class="stat-table">
+                <div class="column">
+                    <table aria-label="userLeftPane">
+                        <tr class="stat-header">
+                            <th></th>
+                        </tr>
+                        <tr>
+                            <td>Matches</td>
+                            <td>
+                                <form action="" class="MATCHES" method="post">
+                                    <input name="statSelected" type="hidden" value="MATCHES">
+                                    <input name="isUserClash" type="hidden" value="0">
+                                    <input name="isAiClash" type="hidden" value="0">
+                                    <input data-th-value="${currentUserPlayer.getMatches}"
+                                           type="submit">
+                                </form>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Runs</td>
+                            <td>
+                                <form action="" class="RUNS" method="post">
+                                    <input name="statSelected" type="hidden" value="RUNS">
+                                    <input name="isUserClash" type="hidden" value="0">
+                                    <input name="isAiClash" type="hidden" value="0">
+                                    <input data-th-value="${currentUserPlayer.getRuns}"
+                                           type="submit">
+                                </form>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Not Outs</td>
+                            <td>
+                                <form action="" class="NOT_OUTS" method="post">
+                                    <input name="statSelected" type="hidden" value="NOT_OUTS">
+                                    <input name="isUserClash" type="hidden" value="0">
+                                    <input name="isAiClash" type="hidden" value="0">
+                                    <input data-th-value="${currentUserPlayer.getNotOuts}"
+                                           type="submit">
+                                </form>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Highest</td>
+                            <td>
+                                <form action="" class="HIGHEST_SCORE" method="post">
+                                    <input name="statSelected" type="hidden" value="HIGHEST_SCORE">
+                                    <input name="isUserClash" type="hidden" value="0">
+                                    <input name="isAiClash" type="hidden" value="0">
+                                    <input data-th-value="${currentUserPlayer.getHighestScoreStar}"
+                                           type="submit">
+                                </form>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Bat. Avg.</td>
+                            <td>
+                                <form action="" class="BAT_AVG" method="post">
+                                    <input name="statSelected" type="hidden" value="BAT_AVG">
+                                    <input name="isUserClash" type="hidden" value="0">
+                                    <input name="isAiClash" type="hidden" value="0">
+                                    <input data-th-value="${currentUserPlayer.getBatAvg}"
+                                           type="submit">
+                                </form>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Bat. SR</td>
+                            <td>
+                                <form action="" class="BAT_STRIKE_RATE" method="post">
+                                    <input name="statSelected" type="hidden" value="BAT_STRIKE_RATE">
+                                    <input name="isUserClash" type="hidden" value="0">
+                                    <input name="isAiClash" type="hidden" value="0">
+                                    <input data-th-value="${currentUserPlayer.getBatStrikeRate}"
+                                           type="submit">
+                                </form>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Centuries</td>
+                            <td>
+                                <form action="" class="HUNDREDS" method="post">
+                                    <input name="statSelected" type="hidden" value="HUNDREDS">
+                                    <input name="isUserClash" type="hidden" value="0">
+                                    <input name="isAiClash" type="hidden" value="0">
+                                    <input data-th-value="${currentUserPlayer.getHundreds}"
+                                           type="submit">
+                                </form>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="column">
+                    <table aria-label="userRightPane">
+                        <tr class="stat-header">
+                            <th></th>
+                        </tr>
+                        <tr>
+                            <td>Fifties</td>
+                            <td>
+                                <form action="" class="FIFTIES" method="post">
+                                    <input name="statSelected" type="hidden" value="FIFTIES">
+                                    <input name="isUserClash" type="hidden" value="0">
+                                    <input name="isAiClash" type="hidden" value="0">
+                                    <input data-th-value="${currentUserPlayer.getFifties}"
+                                           type="submit">
+                                </form>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Overs</td>
+                            <td>
+                                <form action="" class="OVERS" method="post">
+                                    <input name="statSelected" type="hidden" value="OVERS">
+                                    <input name="isUserClash" type="hidden" value="0">
+                                    <input name="isAiClash" type="hidden" value="0">
+                                    <input data-th-value="${currentUserPlayer.getOvers}"
+                                           type="submit">
+                                </form>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Wickets</td>
+                            <td>
+                                <form action="" class="WICKETS" method="post">
+                                    <input name="statSelected" type="hidden" value="WICKETS">
+                                    <input name="isUserClash" type="hidden" value="0">
+                                    <input name="isAiClash" type="hidden" value="0">
+                                    <input data-th-value="${currentUserPlayer.getWickets}"
+                                           type="submit">
+                                </form>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Bowl. Avg.</td>
+                            <td>
+                                <form action="" class="BOWL_AVG" method="post">
+                                    <input name="statSelected" type="hidden" value="BOWL_AVG">
+                                    <input name="isUserClash" type="hidden" value="0">
+                                    <input name="isAiClash" type="hidden" value="0">
+                                    <input data-th-value="${currentUserPlayer.getBowlAvg}"
+                                           type="submit">
+                                </form>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Bowl. ER</td>
+                            <td>
+                                <form action="" class="BOWL_ECON_RATE" method="post">
+                                    <input name="statSelected" type="hidden" value="BOWL_ECON_RATE">
+                                    <input name="isUserClash" type="hidden" value="0">
+                                    <input name="isAiClash" type="hidden" value="0">
+                                    <input data-th-value="${currentUserPlayer.getBowlEconRate}"
+                                           type="submit">
+                                </form>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Bowl. Best</td>
+                            <td>
+                                <form action="" class="BOWL_BBI" method="post">
+                                    <input name="statSelected" type="hidden" value="BOWL_BBI">
+                                    <input name="isUserClash" type="hidden" value="0">
+                                    <input name="isAiClash" type="hidden" value="0">
+                                    <input data-th-value="${currentUserPlayer.getBowlBbi()}"
+                                           type="submit">
+                                </form>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Catches</td>
+                            <td>
+                                <form action="" class="CATCHES" method="post">
+                                    <input name="statSelected" type="hidden" value="CATCHES">
+                                    <input name="isUserClash" type="hidden" value="0">
+                                    <input name="isAiClash" type="hidden" value="0">
+                                    <input data-th-value="${currentUserPlayer.getCatches}"
+                                           type="submit">
+                                </form>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="clash-button-div">
+            <div class="clash-empty-div">
+            </div>
+            <div class="clash-sprite" id="sprite-container">
+                <img alt="Clash!!" src="/images/clash-text-transparent.png">
+            </div>
+            <div class="clash-button-container">
+                <button id="clash-button">
+                    <span id="clash" style="padding: 0; filter: none;">CLASH 👊</span>
+                </button>
+            </div>
+        </div>
+        <div class="card" id="ai-card">
+            <div class="shine"></div>
+            <div class="card-back" id="card-back"></div>
+            <div class="pic-container no-visibility" id="ai-card-logo-bg">
+                <div class="logo" id="ai-card-logo"></div>
+                <div></div>
+                <div></div>
+                <div class="profile-pic">
+                    <img alt=""
+                         id="ai-card-player-image"
+                         src="">
+                </div>
+            </div>
+            <div class="name-country no-visibility" id="ai-card-name">
+                <div>
+                    <strong><span id="ai-card-name-text"></span></strong>
+                </div>
+                <div>
+                    <span class="fi" id="ai-card-flag"></span>
+                    <em> <span id="ai-card-country"></span></em>
+                </div>
+            </div>
+            <div class="stat-table no-visibility" id="ai-card-table">
+                <div class="column">
+                    <table aria-label="aiLeftPane">
+                        <tr class="stat-header">
+                            <th></th>
+                        </tr>
+                        <tr>
+                            <td>Matches</td>
+                            <td>
+                                <form class="MATCHES">
+                                    <input id="ai-card-matches" disabled type="submit">
+                                </form>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Runs</td>
+                            <td>
+                                <form class="RUNS">
+                                    <input id="ai-card-runs" disabled type="submit">
+                                </form>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Not Outs</td>
+                            <td>
+                                <form class="NOT_OUTS">
+                                    <input id="ai-card-nos" disabled type="submit">
+                                </form>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Highest</td>
+                            <td>
+                                <form class="HIGHEST_SCORE">
+                                    <input id="ai-card-highest" disabled type="submit">
+                                </form>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Bat. Avg.</td>
+                            <td>
+                                <form class="BAT_AVG">
+                                    <input id="ai-card-bat-avg" disabled type="submit">
+                                </form>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Bat. SR</td>
+                            <td>
+                                <form class="BAT_STRIKE_RATE">
+                                    <input id="ai-card-bat-sr" disabled type="submit">
+                                </form>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Centuries</td>
+                            <td>
+                                <form class="HUNDREDS">
+                                    <input id="ai-card-hundreds" disabled type="submit">
+                                </form>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="column">
+                    <table aria-label="aiRightPane">
+                        <tr class="stat-header">
+                            <th></th>
+                        </tr>
+                        <tr>
+                            <td>Fifties</td>
+                            <td>
+                                <form class="FIFTIES">
+                                    <input id="ai-card-fifties" disabled type="submit">
+                                </form>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Overs</td>
+                            <td>
+                                <form class="OVERS">
+                                    <input id="ai-card-overs" disabled type="submit">
+                                </form>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Wickets</td>
+                            <td>
+                                <form class="WICKETS">
+                                    <input id="ai-card-wickets" disabled type="submit">
+                                </form>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Bowl. Avg.</td>
+                            <td>
+                                <form class="BOWL_AVG">
+                                    <input id="ai-card-bowl-avg" disabled type="submit">
+                                </form>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Bowl. ER</td>
+                            <td>
+                                <form class="BOWL_ECON_RATE">
+                                    <input id="ai-card-bowl-er" disabled type="submit">
+                                </form>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Bowl. Best</td>
+                            <td>
+                                <form class="BOWL_BBI">
+                                    <input id="ai-card-bowl-bbi" disabled type="submit">
+                                </form>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Catches</td>
+                            <td>
+                                <form class="CATCHES">
+                                    <input id="ai-card-catches" disabled type="submit">
+                                </form>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript" src="/js/game-colors.js"></script>
+<script type="text/javascript" src="/js/game.js"></script>
+<script type="text/javascript" data-th-inline="javascript">
+    const userCardLogoBg = document.getElementById("user-card-logo-bg");
+    const userCardLogo = document.getElementById("user-card-logo");
+    const userCardName = document.getElementById("user-card-name");
+    const userCardFlag = document.getElementById("user-card-flag");
+    let userPlayerCountry = /*[[${currentUserCountry}]]*/ "";
+    let isDisabled = /*[[${intFlags.getTurnOwner}]]*/ 0;
+    let isSinglePlayer = /*[[${singlePlayer}]]*/ 0;
+    getLogoBgColor(userPlayerCountry, userCardLogoBg, userCardLogo);
+    getNameBgColor(userPlayerCountry, userCardName);
+    getFlag(userPlayerCountry, userCardFlag);
+    if (isDisabled === 1) {
+        const forms = document.getElementById("user-card").querySelectorAll("form");
+        const button = document.getElementById("clash-button");
+        forms.forEach(form => {
+            form.lastElementChild.setAttribute("disabled", "true");
+        });
+        button.setAttribute("disabled", "true");
+        if (isSinglePlayer === 1) {
+            takeAiTurn();
+        }
+    }
+</script>
+</body>
+</html>
