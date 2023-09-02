@@ -8,7 +8,7 @@ import lombok.NonNull;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Player {
+public class Player implements Comparable<Player>{
 
     private int id;
     @NonNull private String name;
@@ -30,4 +30,9 @@ public class Player {
     private int bbiRuns;
     private int catches;
     private String imageUrl;
+
+    @Override
+    public int compareTo(@NonNull Player pl)  {
+        return Integer.compare(id, pl.id);
+    }
 }

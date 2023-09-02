@@ -9,6 +9,7 @@ import org.apache.commons.math3.stat.ranking.TiesStrategy;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -49,7 +50,7 @@ public class DatabaseOrchestrator {
         });
     }
 
-    private static void fetchUpdateIdTable() {
+    private static void fetchUpdateIdTable() throws SQLException {
 
         String[] countryIdsArr = PlayerIdWebScraper.countryIds.toArray(new String[0]);
         Observable.fromArray(countryIdsArr).
@@ -82,13 +83,11 @@ public class DatabaseOrchestrator {
             PlayerId playerId = new PlayerId(id, pId);
             playerParsedList.add(playerId);
         }
-        for (PlayerId playerId : playerParsedList) {
-            CrudManager.updateIdTable(playerId);
-        }
+        CrudManager.updateIdTable(playerParsedList);
         LOGGER.info("ID table updated.");
     }
 
-    private static void fetchUpdateStatTable() {
+    private static void fetchUpdateStatTable() throws SQLException {
 
         String[] playerIdsArr = PlayerIdWebScraper.allPlayerList.toArray(new String[0]);
         Observable.fromArray(playerIdsArr)
@@ -113,10 +112,7 @@ public class DatabaseOrchestrator {
         String infoMessagePlayer = "Player Stats size: " +
                 PlayerStatWebScraper.playerStats.size() + ".";
         LOGGER.info(infoMessagePlayer);
-
-        for (Player player : PlayerStatWebScraper.playerStats) {
-            CrudManager.updateStatTable(player);
-        }
+        CrudManager.updateStatTable(PlayerStatWebScraper.playerStats);
         LOGGER.info("Stat table updated.");
     }
 
@@ -126,7 +122,7 @@ public class DatabaseOrchestrator {
     }
 
     private static double[] rankAndConvert(@NonNull StatExtractor extractor) {
-        NaturalRanking ranking = new NaturalRanking(TiesStrategy.MAXIMUM);
+        NaturalRanking ranking = new NaturalRanking(TiesStrategy.MINIMUM);
 
         return ranking.rank(PlayerStatWebScraper.playerStats
                 .stream()
@@ -138,17 +134,17 @@ public class DatabaseOrchestrator {
         int length = dataArrays.get(0).length;
 
         return IntStream.range(0, length).mapToDouble(i -> {
-            double sumOfReciprocals = 0.0;
+            double rankValue = 1.0;
             List<Double> statRanks = new ArrayList<>();
             for (double[] dataArray : dataArrays) {
                 statRanks.add(dataArray[i]);
             }
             statRanks.sort(Comparator.reverseOrder());
-            List<Double> topHalfRanks = statRanks.subList(0, 5);
-            for (Double el : topHalfRanks) {
-                sumOfReciprocals += 1.0 / el;
+            List<Double> topRanks = statRanks.subList(0, 4);
+            for (Double el : topRanks) {
+                rankValue *= el;
             }
-            return 5 / sumOfReciprocals;
+            return rankValue;
         }).toArray();
     }
 
@@ -168,13 +164,13 @@ public class DatabaseOrchestrator {
         double[] combinedScores = combineScores(dataArrays);
         List<Integer> playerRanks = new ArrayList<>();
         for (double value : ranking.rank(combinedScores)) {
-            playerRanks.add(combinedScores.length + 1 - (int) value);
+            playerRanks.add(PlayerStatWebScraper.playerStats.size() + 1 - (int) value);
         }
 
         return playerRanks;
     }
 
-    private static void fetchUpdateRankTable() {
+    private static void fetchUpdateRankTable() throws SQLException {
 
         List<Integer> playerIds = PlayerStatWebScraper.playerStats
                 .stream()
@@ -188,13 +184,11 @@ public class DatabaseOrchestrator {
             PlayerRankObj playerRankObj = new PlayerRankObj(id, pRank);
             playerRankList.add(playerRankObj);
         }
-        for (PlayerRankObj playerId : playerRankList) {
-            CrudManager.updateRankTable(playerId);
-        }
+        CrudManager.updateRankTable(playerRankList);
         LOGGER.info("Rank table updated.");
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws SQLException {
 
         CrudManager.createNewDatabase();
         CrudManager.createIdTable();

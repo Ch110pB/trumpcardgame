@@ -2,7 +2,7 @@ const connectBtn = document.getElementById("connect");
 const tokenText = document.getElementById("token");
 const connectErrorText = document.getElementById("connectError");
 
-connectBtn.addEventListener("click", function(event){
+connectBtn.addEventListener("click", function (event) {
     event.preventDefault();
     let form = event.target.closest("form");
     const token = tokenText.value;
@@ -15,7 +15,9 @@ connectBtn.addEventListener("click", function(event){
                 connectErrorText.textContent = "Invalid session code: Please try again!";
                 connectErrorText.style.color = "#df1f1f";
             } else {
-                form.submit();
+                setTimeout(function () {
+                    form.submit();
+                }, 1000);
             }
         } else {
             console.error("Network error");
@@ -24,5 +26,5 @@ connectBtn.addEventListener("click", function(event){
     xhr.onerror = function () {
         console.error("Network error");
     };
-    xhr.send(JSON.stringify({ token: token }));
-    })
+    xhr.send(JSON.stringify({token: token}));
+})

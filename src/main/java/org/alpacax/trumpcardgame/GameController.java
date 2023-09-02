@@ -3,10 +3,12 @@ package org.alpacax.trumpcardgame;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpSession;
+import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import org.alpacax.trumpcarddb.Player;
 import org.apache.commons.lang3.EnumUtils;
 import org.jetbrains.annotations.Contract;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,21 +23,26 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.Map;
 
 @Controller
-@SessionAttributes({"gameDeck", "intFlags", "singlePlayer"})
+@AllArgsConstructor
+@SessionAttributes({"gameDeck", "intFlags", "singlePlayer", "gameToken"})
 
 public class GameController {
 
     private static final String GAME_DECK = "gameDeck";
     private static final String INT_FLAGS = "intFlags";
     private static final String SINGLE_PLAYER = "singlePlayer";
+    private static final String GAME_TOKEN = "gameToken";
     private static final String REF_REDIRECT = "redirect:referee";
+    private final SimpMessagingTemplate simpMessagingTemplate;
 
     @Contract(pure = true)
     @GetMapping("/")
-    public static @NonNull String homepage() {
+    public @NonNull String homepage() {
 
         return "homepage";
     }
@@ -48,12 +55,13 @@ public class GameController {
         attributes.addFlashAttribute(GAME_DECK, deck);
         attributes.addFlashAttribute(INT_FLAGS, new FlagSet());
         attributes.addFlashAttribute(SINGLE_PLAYER, 1);
+        attributes.addFlashAttribute(GAME_TOKEN, "null");
 
         return REF_REDIRECT;
     }
 
-    @GetMapping("/newGame")
-    public String initialize(@NonNull RedirectAttributes attributes)
+    @GetMapping("/new-game")
+    public String initialize(@NonNull Model model)
             throws SQLException, NoSuchAlgorithmException {
 
         Deck deck = GameHelper.getDecks();
@@ -63,10 +71,25 @@ public class GameController {
         }
         GameHelper.updateSessionTable(new GameSession(gameToken, 0,
                 deck, new FlagSet(), 1));
+        model.addAttribute(GAME_TOKEN, gameToken);
 
+        return "playerwait";
+    }
+
+    @PostMapping("/new-game")
+    public String startGame(@RequestParam("token") String token,
+                            @NonNull RedirectAttributes attributes)
+            throws SQLException, JsonProcessingException {
+
+        ObjectMapper mapper = new ObjectMapper();
+        String response = GameHelper.getSession(token);
+        Deck deck = mapper.readValue(response, Deck.class);
+        FlagSet flagSet = new FlagSet();
+        flagSet.setTurnOwner(0);
         attributes.addFlashAttribute(GAME_DECK, deck);
-        attributes.addFlashAttribute(INT_FLAGS, new FlagSet());
+        attributes.addFlashAttribute(INT_FLAGS, flagSet);
         attributes.addFlashAttribute(SINGLE_PLAYER, 0);
+        attributes.addFlashAttribute(GAME_TOKEN, token);
 
         return REF_REDIRECT;
     }
@@ -78,6 +101,7 @@ public class GameController {
 
         attributes.addFlashAttribute(INT_FLAGS, model.getAttribute(INT_FLAGS));
         attributes.addFlashAttribute(SINGLE_PLAYER, model.getAttribute(SINGLE_PLAYER));
+        attributes.addFlashAttribute(GAME_TOKEN, model.getAttribute(GAME_TOKEN));
 
         Deck gameDeck = (Deck) model.getAttribute(GAME_DECK);
         assert gameDeck != null;
@@ -102,10 +126,12 @@ public class GameController {
         session.setAttribute(GAME_DECK, model.getAttribute(GAME_DECK));
         session.setAttribute(INT_FLAGS, model.getAttribute(INT_FLAGS));
         session.setAttribute(SINGLE_PLAYER, model.getAttribute(SINGLE_PLAYER));
+        session.setAttribute(GAME_TOKEN, model.getAttribute(GAME_TOKEN));
 
         Deck gameDeck = (Deck) model.getAttribute(GAME_DECK);
         FlagSet intFlags = (FlagSet) model.getAttribute(INT_FLAGS);
         Integer isSinglePlayer = (Integer) model.getAttribute(SINGLE_PLAYER);
+        String gameToken = (String) model.getAttribute(GAME_TOKEN);
 
         assert gameDeck != null;
         Player player = gameDeck.getSideStack().get(0);
@@ -118,6 +144,7 @@ public class GameController {
         model.addAttribute(GAME_DECK, gameDeck);
         model.addAttribute(INT_FLAGS, intFlags);
         model.addAttribute(SINGLE_PLAYER, isSinglePlayer);
+        model.addAttribute(GAME_TOKEN, gameToken);
 
         return "game";
     }
@@ -125,53 +152,67 @@ public class GameController {
     @Contract(pure = true)
     @PostMapping("/getAiPlayer")
     @ResponseBody
-    public static @NonNull GamePostResponse getAiPlayer(
-            @SessionAttribute("gameDeck") @NonNull Deck gameDeck) {
+    public @NonNull GamePostResponse getAiPlayer(
+            @RequestBody @NonNull GamePostRequest request,
+            @SessionAttribute(GAME_DECK) @NonNull Deck gameDeck) {
 
         CardFaceView aiPlayer = GameHelper.getCardFaceView(gameDeck.getSideStack().get(1));
         String countryShortName = CardManager.getShortName(aiPlayer.getCountry()).name();
+        String gameToken = request.getGameToken();
+        String statSelected = request.getStatSelected();
+        simpMessagingTemplate.convertAndSend("/topic/game-progress/" + gameToken,
+                statSelected);
+
         return new GamePostResponse(aiPlayer, countryShortName);
     }
 
     @PostMapping("/game")
     public String gamePageSubmit(@RequestParam("statSelected") String statSelected,
-                                 @RequestParam("isUserClash") String isUserClash,
-                                 @RequestParam("isAiClash") String isAiClash,
                                  @SessionAttribute(GAME_DECK) Deck gameDeck,
                                  @SessionAttribute(INT_FLAGS) @NonNull FlagSet intFlags,
                                  @SessionAttribute(SINGLE_PLAYER) @NonNull Integer isSinglePlayer,
+                                 @SessionAttribute(GAME_TOKEN) String gameToken,
                                  RedirectAttributes attributes) {
 
         GameTurnComparator.Stat statEnum = EnumUtils.getEnumIgnoreCase(
                 GameTurnComparator.Stat.class, statSelected);
-        int isUserClashActual = Integer.parseInt(isUserClash);
-        int isAiClashActual = Integer.parseInt(isAiClash);
-        if (isUserClashActual > intFlags.getClashUser()) {
-            isUserClashActual = 0;
-        }
-        if (isAiClashActual > intFlags.getClashAi()) {
-            isAiClashActual = 0;
-        }
-        int turnWinner = GameTurnComparator.getTurnWinner(gameDeck, statEnum,
-                isUserClashActual, isAiClashActual);
+        int turnWinner = GameTurnComparator.getTurnWinner(gameDeck, statEnum);
+        LinkedList<Player> sideStack = gameDeck.getSideStack();
+        Collections.sort(sideStack);
         if (turnWinner == 0) {
-            if (isAiClashActual == 1) {
-                intFlags.setClashAi(0);
-            }
-            gameDeck.getUserDeck().addAll(gameDeck.getSideStack());
+            gameDeck.getUserDeck().addAll(sideStack);
             gameDeck.getSideStack().clear();
             intFlags.setTurnOwner(turnWinner);
         } else if (turnWinner == 1) {
-            if (isUserClashActual == 1) {
-                intFlags.setClashUser(0);
-            }
-            gameDeck.getAiDeck().addAll(gameDeck.getSideStack());
+            gameDeck.getAiDeck().addAll(sideStack);
             gameDeck.getSideStack().clear();
             intFlags.setTurnOwner(turnWinner);
         }
         attributes.addFlashAttribute(GAME_DECK, gameDeck);
         attributes.addFlashAttribute(INT_FLAGS, intFlags);
         attributes.addFlashAttribute(SINGLE_PLAYER, isSinglePlayer);
+        attributes.addFlashAttribute(GAME_TOKEN, gameToken);
+
+        return REF_REDIRECT;
+    }
+
+    @PostMapping("/connect")
+    public String connectToSession(@RequestParam("token") String token,
+                                   @NonNull RedirectAttributes attributes)
+            throws SQLException, JsonProcessingException {
+
+        ObjectMapper mapper = new ObjectMapper();
+        String response = GameHelper.getSession(token);
+        GameHelper.updateConnectedSession(token);
+        Deck deck = GameHelper.flipDeck(mapper.readValue(response, Deck.class));
+        FlagSet flagSet = new FlagSet();
+        flagSet.setTurnOwner(1);
+        attributes.addFlashAttribute(GAME_DECK, deck);
+        attributes.addFlashAttribute(INT_FLAGS, flagSet);
+        attributes.addFlashAttribute(SINGLE_PLAYER, 0);
+        attributes.addFlashAttribute(GAME_TOKEN, token);
+        simpMessagingTemplate.convertAndSend("/topic/game-join/" + token,
+                1);
 
         return REF_REDIRECT;
     }
@@ -190,22 +231,5 @@ public class GameController {
         } else {
             return "INVALID";
         }
-    }
-
-    @PostMapping("/connect")
-    public static String connectToSession(
-            @RequestParam("token") String token,
-            @NonNull RedirectAttributes attributes)
-            throws SQLException, JsonProcessingException {
-
-        ObjectMapper mapper = new ObjectMapper();
-        String response = GameHelper.getSession(token);
-        GameHelper.updateConnectedSession(token);
-        Deck deck = GameHelper.flipDeck(mapper.readValue(response, Deck.class));
-        attributes.addFlashAttribute(GAME_DECK, deck);
-        attributes.addFlashAttribute(INT_FLAGS, new FlagSet());
-        attributes.addFlashAttribute(SINGLE_PLAYER, 0);
-
-        return REF_REDIRECT;
     }
 }

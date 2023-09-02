@@ -206,8 +206,8 @@ public class PlayerStatWebScraper {
         ExecutorService executor = Executors.newFixedThreadPool(1);
         CompletableFuture<String> pageContentFuture =
                 PlayerIdWebScraper.readWebpage(WEB_HEADER + pl, httpClient, executor);
-        String pageContent = pageContentFuture.join();
-        executor.shutdown();
+        String pageContent = pageContentFuture.exceptionally(ex -> null)
+                .whenComplete((v, ex) -> executor.shutdown()).join();
         Document doc = Jsoup.parse(pageContent);
         List<String> baseStats;
         try {

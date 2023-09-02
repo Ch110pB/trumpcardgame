@@ -12,6 +12,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDate;
+import java.util.Set;
 
 @UtilityClass
 public class CrudManager {
@@ -123,7 +124,7 @@ public class CrudManager {
         return conn;
     }
 
-    public static void updateIdTable(PlayerId pid) {
+    public static void updateIdTable(Set<PlayerId> playerIds) throws SQLException {
 
         String sql = """
                 INSERT INTO ids
@@ -135,17 +136,23 @@ public class CrudManager {
                 updatedAt = excluded.updatedAt
                 """;
         Connection conn = Preconditions.checkNotNull(connect(), NULL_CONN_MESSAGE);
+        conn.setAutoCommit(false);
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, pid.getId());
-            stmt.setString(2, pid.getPlayerPageId());
-            stmt.setString(3, String.valueOf(LocalDate.now()));
-            stmt.executeUpdate();
+            for (PlayerId pid: playerIds) {
+                stmt.setInt(1, pid.getId());
+                stmt.setString(2, pid.getPlayerPageId());
+                stmt.setString(3, String.valueOf(LocalDate.now()));
+                stmt.addBatch();
+            }
+            int[] rows = stmt.executeBatch();
+            LOGGER.info(rows.length);
+            conn.commit();
         } catch (SQLException | NullPointerException e) {
             LOGGER.error(e.getMessage());
         }
     }
 
-    public static void updateStatTable(Player player) {
+    public static void updateStatTable(Set<Player> playerList) throws SQLException {
 
         String sql = """
                 INSERT INTO stats
@@ -168,35 +175,41 @@ public class CrudManager {
                 updatedAt = excluded.updatedAt
                 """;
         Connection conn = Preconditions.checkNotNull(connect(), NULL_CONN_MESSAGE);
+        conn.setAutoCommit(false);
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, player.getId());
-            stmt.setString(2, player.getName());
-            stmt.setString(3, player.getCountry());
-            stmt.setInt(4, player.getMatches());
-            stmt.setInt(5, player.getRuns());
-            stmt.setInt(6, player.getNotOuts());
-            stmt.setInt(7, player.getHighestScore());
-            stmt.setInt(8, player.getHighestScoreFlag());
-            stmt.setDouble(9, player.getBatAvg());
-            stmt.setDouble(10, player.getBatStrikeRate());
-            stmt.setInt(11, player.getHundreds());
-            stmt.setInt(12, player.getFifties());
-            stmt.setDouble(13, player.getOvers());
-            stmt.setInt(14, player.getWickets());
-            stmt.setDouble(15, player.getBowlAvg());
-            stmt.setDouble(16, player.getBowlEconRate());
-            stmt.setInt(17, player.getBbiWickets());
-            stmt.setDouble(18, player.getBbiRuns());
-            stmt.setInt(19, player.getCatches());
-            stmt.setString(20, player.getImageUrl());
-            stmt.setString(21, String.valueOf(LocalDate.now()));
-            stmt.executeUpdate();
+            for (Player player: playerList) {
+                stmt.setInt(1, player.getId());
+                stmt.setString(2, player.getName());
+                stmt.setString(3, player.getCountry());
+                stmt.setInt(4, player.getMatches());
+                stmt.setInt(5, player.getRuns());
+                stmt.setInt(6, player.getNotOuts());
+                stmt.setInt(7, player.getHighestScore());
+                stmt.setInt(8, player.getHighestScoreFlag());
+                stmt.setDouble(9, player.getBatAvg());
+                stmt.setDouble(10, player.getBatStrikeRate());
+                stmt.setInt(11, player.getHundreds());
+                stmt.setInt(12, player.getFifties());
+                stmt.setDouble(13, player.getOvers());
+                stmt.setInt(14, player.getWickets());
+                stmt.setDouble(15, player.getBowlAvg());
+                stmt.setDouble(16, player.getBowlEconRate());
+                stmt.setInt(17, player.getBbiWickets());
+                stmt.setDouble(18, player.getBbiRuns());
+                stmt.setInt(19, player.getCatches());
+                stmt.setString(20, player.getImageUrl());
+                stmt.setString(21, String.valueOf(LocalDate.now()));
+                stmt.addBatch();
+            }
+            int[] rows = stmt.executeBatch();
+            LOGGER.info(rows.length);
+            conn.commit();
         } catch (SQLException | NullPointerException e) {
             LOGGER.error(e.getMessage());
         }
     }
 
-    public static void updateRankTable(PlayerRankObj pObj) {
+    public static void updateRankTable(Set<PlayerRankObj> playerRankList) throws SQLException {
 
         String sql = """
                 INSERT INTO ranks
@@ -208,11 +221,17 @@ public class CrudManager {
                 updatedAt = excluded.updatedAt
                 """;
         Connection conn = Preconditions.checkNotNull(connect(), NULL_CONN_MESSAGE);
+        conn.setAutoCommit(false);
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, pObj.getId());
-            stmt.setInt(2, pObj.getPlayerRank());
-            stmt.setString(3, String.valueOf(LocalDate.now()));
-            stmt.executeUpdate();
+            for (PlayerRankObj pObj: playerRankList) {
+                stmt.setInt(1, pObj.getId());
+                stmt.setInt(2, pObj.getPlayerRank());
+                stmt.setString(3, String.valueOf(LocalDate.now()));
+                stmt.addBatch();
+            }
+            int[] rows = stmt.executeBatch();
+            LOGGER.info(rows.length);
+            conn.commit();
         } catch (SQLException | NullPointerException e) {
             LOGGER.error(e.getMessage());
         }

@@ -255,12 +255,11 @@ public class GameHelper {
     @Contract("_ -> new")
     public static @NonNull Deck flipDeck(@NonNull Deck deck) {
 
-        Player userPlayer = deck.getSideStack().poll();
-        Player aiPlayer = deck.getSideStack().poll();
-        LinkedList<Player> sideStack = deck.getSideStack();
-        sideStack.add(0, userPlayer);
-        sideStack.add(0, aiPlayer);
+        Deck flippedDeck = new Deck();
+        flippedDeck.setUserDeck(deck.getAiDeck());
+        flippedDeck.setAiDeck(deck.getUserDeck());
+        flippedDeck.setSideStack(deck.getSideStack());
 
-        return new Deck(deck.getAiDeck(), deck.getUserDeck(), sideStack);
+        return flippedDeck;
     }
 }
